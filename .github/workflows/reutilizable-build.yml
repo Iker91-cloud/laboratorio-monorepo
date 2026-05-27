@@ -1,0 +1,27 @@
+name: Build Reutilizable
+
+on:
+  workflow_call:
+    inputs:
+      component_name:
+        description: 'Nombre del componente a compilar'
+        required: true
+        type: string
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+      
+      - name: Simular Build de ${{ inputs.component_name }}
+        run: |
+          echo "Iniciando proceso de build para ${{ inputs.component_name }}..."
+          sleep 2 # Simulando tiempo de compilación
+          echo "Build completado con éxito."
+
+      - name: Simular Tests
+        run: |
+          echo "Ejecutando batería de pruebas..."
+          echo "Tests pasados."

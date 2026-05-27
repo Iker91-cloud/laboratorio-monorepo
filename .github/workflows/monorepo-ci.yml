@@ -1,0 +1,67 @@
+name: Monorepo CI/CD
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - [cite_start]'documentacion/**' # Ignorar cambios en documentación cuando proceda 
+
+jobs:
+  detectar-cambios:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+      infraestructura: ${{ steps.filter.outputs.infraestructura }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend: 'frontend/**'
+            backend: 'backend/**'
+            infraestructura: 'infraestructura/**'
+
+  pipeline-frontend:
+    needs: detectar-cambios
+    [cite_start]if: ${{ needs.detectar-cambios.outputs.frontend == 'true' }} # Lógica condicional real [cite: 43]
+    uses: ./.github/workflows/reutilizable-build.yml
+    with:
+      component_name: 'Frontend'
+
+  pipeline-backend:
+    needs: detectar-cambios
+    if: ${{ needs.detectar-cambios.outputs.backend == 'true' }}
+    uses: ./.github/workflows/reutilizable-build.yml
+    with:
+      component_name: 'Backend'
+
+  pipeline-infra:
+    needs: detectar-cambios
+    if: ${{ needs.detectar-cambios.outputs.infraestructura == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validar Infraestructura
+        run: echo "Validando plantillas de Terraform/CloudFormation..."
+
+  reporte-final:
+    if: always() # Asegura que se ejecute independientemente de si los anteriores se omitieron
+    needs: [detectar-cambios, pipeline-frontend, pipeline-backend, pipeline-infra]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generar resumen final
+        run: |
+          # Generar resumen final con componentes afectados y jobs [cite: 37, 38, 39, 40]
+          echo "## 📊 Reporte de Ejecución del Monorepo" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### Componentes Afectados:" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend**: ${{ needs.detectar-cambios.outputs.frontend }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend**: ${{ needs.detectar-cambios.outputs.backend }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Infraestructura**: ${{ needs.detectar-cambios.outputs.infraestructura }}" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### Estado de los Pipelines:" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend Build**: ${{ needs.pipeline-frontend.result || 'Omitido' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend Build**: ${{ needs.pipeline-backend.result || 'Omitido' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Infraestructura Check**: ${{ needs.pipeline-infra.result || 'Omitido' }}" >> $GITHUB_STEP_SUMMARY
