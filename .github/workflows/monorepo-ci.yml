@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths-ignore:
-      - [cite_start]'documentacion/**' # Ignorar cambios en documentación cuando proceda 
+      - 'documentacion/**' # Ignorar cambios en documentación cuando proceda
 
 jobs:
   detectar-cambios:
@@ -26,7 +26,7 @@ jobs:
 
   pipeline-frontend:
     needs: detectar-cambios
-    [cite_start]if: ${{ needs.detectar-cambios.outputs.frontend == 'true' }} # Lógica condicional real [cite: 43]
+    if: ${{ needs.detectar-cambios.outputs.frontend == 'true' }} # Lógica condicional real
     uses: ./.github/workflows/reutilizable-build.yml
     with:
       component_name: 'Frontend'
@@ -47,13 +47,12 @@ jobs:
         run: echo "Validando plantillas de Terraform/CloudFormation..."
 
   reporte-final:
-    if: always() # Asegura que se ejecute independientemente de si los anteriores se omitieron
+    if: always() 
     needs: [detectar-cambios, pipeline-frontend, pipeline-backend, pipeline-infra]
     runs-on: ubuntu-latest
     steps:
       - name: Generar resumen final
         run: |
-          # Generar resumen final con componentes afectados y jobs [cite: 37, 38, 39, 40]
           echo "## 📊 Reporte de Ejecución del Monorepo" >> $GITHUB_STEP_SUMMARY
           
           echo "### Componentes Afectados:" >> $GITHUB_STEP_SUMMARY
